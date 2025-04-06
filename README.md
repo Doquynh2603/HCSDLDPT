@@ -22,8 +22,3 @@ Xây dựng hệ CSDL lưu trữ và tìm kiếm giọng nói phụ nữ.
         - Mel-Spectrogram:librosa
 - Lưu vào cơ sở dữ liệu: sử dụng MySQL
 - làm giao diện cơ bản + api : sử dụng flask trong python
-
-## **Các thư viện cần thiết**
--librosa
--pypraat
--pymysql
