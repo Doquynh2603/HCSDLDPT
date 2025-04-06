@@ -12,13 +12,18 @@ Xây dựng hệ CSDL lưu trữ và tìm kiếm giọng nói phụ nữ.
 
 - Chuẩn bị dữ liệu ( 200 file giọng nói phụ nữ)
 - Trích rút đặc trưng (có tool sẵn)
-    - Sử dụng thư viện `librosa` hoặc `torchaudio` để trích MFCC, pitch, spectral centroid,...
+    - Sử dụng thư viện `librosa` hoặc `pypraat` để trích MFCC, pitch, spectral centroid,...
     - Các đặc trưng lựa chọn:
-        - MFCC (Mel-Frequency Cepstral Coefficients)
-        - Pitch (Tần số cơ bản - F0)
-        - Formant Frequencies (F1, F2, F3)
-        - Spectral Centroid
-        - Zero-Crossing Rate (ZCR)
-        - Mel-Spectrogram
+        - MFCC (Mel-Frequency Cepstral Coefficients):librosa
+        - Pitch (Tần số cơ bản - F0):librosa
+        - Formant Frequencies (F1, F2, F3):pypraat
+        - Spectral Centroid:librosa
+        - Zero-Crossing Rate (ZCR):librosa
+        - Mel-Spectrogram:librosa
 - Lưu vào cơ sở dữ liệu: sử dụng MySQL
 - làm giao diện cơ bản + api : sử dụng flask trong python
+
+## **Các thư viện cần thiết**
+-librosa
+-pypraat
+-pymysql
