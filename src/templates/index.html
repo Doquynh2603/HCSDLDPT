@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>So sánh đặc trưng âm thanh</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .form-container {
+            margin-bottom: 20px;
+        }
+
+        .result-container {
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .error {
+            color: red;
+        }
+
+        .success {
+            color: green;
+        }
+
+        audio {
+            margin-top: 10px;
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>So sánh đặc trưng âm thanh</h1>
+
+    <div class="form-container">
+        <form id="uploadForm">
+            <label for="file">Chọn file âm thanh (.wav):</label><br>
+            <input type="file" id="file" name="file" accept=".wav" required><br><br>
+            <input type="submit" value="So sánh">
+        </form>
+        <p id="message"></p>
+    </div>
+
+    <div id="result-container" class="result-container" style="display: none;">
+        <h2>Kết quả so sánh</h2>
+        <ul id="result-list"></ul>
+    </div>
+
+    <script>
+        document.getElementById("uploadForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const messageEl = document.getElementById("message");
+            const resultContainer = document.getElementById("result-container");
+            const resultList = document.getElementById("result-list");
+
+            messageEl.textContent = "Đang xử lý...";
+            messageEl.className = "";
+
+            try {
+                const res = await fetch("/compare", {
+                    method: "POST",
+                    body: formData
+                });
+
+                const data = await res.json();
+
+                if (data.error) {
+                    messageEl.textContent = data.error;
+                    messageEl.className = "error";
+                    resultContainer.style.display = "none";
+                } else {
+                    messageEl.textContent = "So sánh thành công!";
+                    messageEl.className = "success";
+                    resultList.innerHTML = "";
+                    resultContainer.style.display = "block";
+
+                    data.results.forEach((result, index) => {
+                        const li = document.createElement("li");
+                        li.innerHTML = `
+                            Top ${index + 1}: ${result.file_name} - Độ tương đồng: ${result.similarity}
+                            <br>
+                            <audio controls>
+                                <source src="/dataset/${result.file_name}" type="audio/wav">
+                                Trình duyệt không hỗ trợ thẻ audio.
+                            </audio>
+                        `;
+                        resultList.appendChild(li);
+                    });
+                }
+            } catch (err) {
+                messageEl.textContent = "Lỗi kết nối đến máy chủ.";
+                messageEl.className = "error";
+                resultContainer.style.display = "none";
+            }
+        });
+    </script>
+</body>
+
+</html>

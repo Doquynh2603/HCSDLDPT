@@ -1,12 +1,11 @@
-from pitch import pitch_function
-from mfcc import mffc_function
-from mel import mel_function
-from spectral import spectral_function
-from zcr import zcr_function
-from formats import formats_function
-import pandas as pd
+from dac_trung.pitch import pitch_function
+from dac_trung.mfcc import mfcc_function
+from dac_trung.rmse import rmse_function
+from dac_trung.spectral import spectral_centroid_function
+from dac_trung.zcr import zcr_function
 import os
 import pymysql
+import json
 # Thông tin kết nối MySQL
 conn = pymysql.connect(
     host='localhost',      # hoặc địa chỉ IP MySQL server
@@ -16,51 +15,49 @@ conn = pymysql.connect(
     charset='utf8mb4'
 )
 cursor = conn.cursor()
-# get subpath
-listsubpath = []
-directory = 'Dataset/'
-for x in os.walk(directory):
-    listsubpath.append(x[0].replace("\\", "/"))
-listsubpath.pop(0)
+# Thư mục chứa các file âm thanh
+audio_dir = "Dataset\\"
 
-# get files
-allpath = []
-for subpath in listsubpath:
-    f = []
-    for (dirpath, dirnames, filenames) in os.walk(subpath):
-        f.extend(filenames)
-        break
-    for namefile in f:
-        allpath.append(subpath + "/" + namefile)
+# Trích xuất và lưu đặc trưng
+for root, dirs, files in os.walk(audio_dir):
+    for file in files:
+        if file.endswith(".wav"):  # Chỉ xử lý file WAV
+            file_path = os.path.join(root, file)
+            # Tạo file_name để lưu vào CSDL (bao gồm thư mục con, ví dụ: F01/F01-5001.wav)
+            relative_path = os.path.relpath(file_path, audio_dir).replace("\\", "/")
+    
+            try:
+                # Trích xuất các đặc trưng
+                mfcc = mfcc_function(file_path)
+                pitch = pitch_function(file_path)
+                spectral_centroid = spectral_centroid_function(file_path)
+                zcr = zcr_function(file_path)
+                rmse = rmse_function(file_path)
+                
+                # Chuyển MFCC thành chuỗi JSON
+                mfcc_json = json.dumps(mfcc.tolist())
+                
+                # Chèn dữ liệu vào bảng
+                query = """
+                INSERT INTO female_voices (file_name, mfcc, pitch, spectral_centroid, zcr, rmse)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                """
+                values = (relative_path, mfcc_json, pitch, spectral_centroid, zcr, rmse)
+                cursor.execute(query, values)
+            #     query = """
+            #     UPDATE female_voices SET pitch = %s WHERE file_name = %s
+            #     """
+            #     values = (pitch,relative_path)
+            #     cursor.execute(query, values)
+                
+            #     print(f"Đã sửa đặc trưng pitch cho {relative_path}")
+                
+            except Exception as e:
+                print(f"Lỗi khi xử lý {relative_path}: {e}")
 
-# Danh sách lưu kết quả
-data_list = []
-
-# Header
-header = ['Path', 'MFCC', 'Pitch', 'Formats', 'Mel-Spectrogram', 'Spectral Centroid', 'Zero-Crossing Rate']
-
-for path in allpath:
-    try:
-        mfcc = mffc_function(path)
-        pitch = pitch_function(path)
-        formats = formats_function(path)
-        mel = mel_function(path)
-        spectral = spectral_function(path)
-        zrc = zcr_function(path)
-
-        sql = """
-        INSERT INTO audio_features
-        (audio_path, mfcc, pitch, formats, mel_spectrogram, spectral_centroid, zero_crossing_rate)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """
-        cursor.execute(sql, (
-            path, str(mfcc),str(pitch), str(formats), str(mel), float(spectral), float(zrc)
-        ))
-        print(f"Đã lưu: {path}")
-    except Exception as e:
-        print("======" + path)
-        print("Have exception:", str(e))
+# Xác nhận thay đổi
 conn.commit()
+
+# Đóng kết nối
 cursor.close()
 conn.close()
-print("Lưu dữ liệu vào MySQL thành công.")
