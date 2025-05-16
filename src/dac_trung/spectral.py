@@ -2,7 +2,7 @@ import librosa
 import numpy as np
 
 def spectral_centroid_function(file_path):
-    sr=16000
+    sr=44100
     frame_length=0.025
     hop_length=0.010
     #Đọc tín hiệu âm thanh với tần số lấy mẫu 44.1 kHz

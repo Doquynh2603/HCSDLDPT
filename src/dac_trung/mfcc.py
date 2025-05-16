@@ -3,7 +3,7 @@ import numpy as np
 
 def mfcc_function(file_path):
     n_mfcc=13
-    sr=16000
+    sr=44100
     frame_length=0.025
     hop_length=0.010
     # Bước 1: Đọc tín hiệu âm thanh
@@ -25,6 +25,3 @@ def mfcc_function(file_path):
     
     return mfcc_mean
 
-# file_path = "D:\\NAM4\\KY2\\HCSDLDPT\\HCSDLDPT\\src\\Dataset\\F01\\F01-S001.wav"
-# mfcc_vector = compute_mfcc(file_path)
-# print("Vector MFCC (13 chiều):", mfcc_vector)
