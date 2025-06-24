@@ -3,7 +3,7 @@ from dac_trung.mfcc import mfcc_function
 from dac_trung.rmse import rmse_function
 from dac_trung.spectral import spectral_centroid_function
 from dac_trung.zcr import zcr_function
-from dac_trung.speech_rate import speach_rate_function
+from dac_trung.speech_rate import speech_rate_function
 import os
 import pymysql
 import json
@@ -13,7 +13,7 @@ conn = pymysql.connect(
     host='localhost',      # hoặc địa chỉ IP MySQL server
     user='root',
     password='123456789',
-    database='hcsdldpt',
+    database='hcsdldpt1',
     charset='utf8mb4'
 )
 cursor = conn.cursor()
@@ -25,7 +25,7 @@ for root, dirs, files in os.walk(audio_dir):
     for file in files:
         if file.endswith(".wav"):  # Chỉ xử lý file WAV
             file_path = os.path.join(root, file)
-            # Tạo file_name để lưu vào CSDL (bao gồm thư mục con, ví dụ: F01/F01-5001.wav)
+            # Tạo file_name để lưu vào CSDL (bao gồm thư mục con, ví dụ: F01/F01-001.wav)
             relative_path = os.path.relpath(file_path, audio_dir).replace("\\", "/")
     
             try:
@@ -35,7 +35,7 @@ for root, dirs, files in os.walk(audio_dir):
                 spectral_centroid = spectral_centroid_function(file_path)
                 zcr = zcr_function(file_path)
                 rmse = rmse_function(file_path)
-                speech_rate = speach_rate_function(file_path)
+                speech_rate = speech_rate_function(file_path)
                 # Chuyển MFCC thành chuỗi JSON
                 mfcc_json = json.dumps(mfcc.tolist())
                 
@@ -49,7 +49,7 @@ for root, dirs, files in os.walk(audio_dir):
                     "speech_rate": speech_rate
                 })
             except Exception as e: 
-                print(f"Lỗi khi xử lý")
+                print(f"Lỗi khi xử lý file {relative_path}: {e}")
 #tính giá trị trung bình và độ lệch chuẩn cho toàn bộ file
 def z_score(x, mean, std):
     return (x-mean) / std if std != 0 else 0.0
@@ -105,7 +105,7 @@ for d in data:
 
     try:
         query = """
-        INSERT INTO female_voices (file_name, mfcc, pitch, spectral_centroid, zcr, rmse, speech_rate)
+        INSERT INTO female_voice (file_name, mfcc, pitch, spectral_centroid, zcr, rmse, speech_rate)
         VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
         values = (d["file"], mfcc_json, pitch, sc, zcr, rmse, sr)

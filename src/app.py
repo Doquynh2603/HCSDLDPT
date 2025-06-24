@@ -3,10 +3,8 @@ import numpy as np
 import json
 import os
 from flask import Flask, render_template, request, flash, redirect, url_for,send_from_directory,jsonify
-from sklearn.preprocessing import MinMaxScaler
 from werkzeug.utils import secure_filename
 from attribute import extract_features
-
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
 UPLOAD_FOLDER = "uploads"
@@ -48,7 +46,7 @@ def index():
             # Trích xuất đặc trưng từ file đầu vào
             try:
                 results = extract_features(filepath)
-
+                show_waveform(filepath, save_path="static/waveform.png")
                 # Xóa file tạm
                 os.remove(filepath)
 

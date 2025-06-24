@@ -1,24 +1,77 @@
-import librosa
+# import librosa
+# import numpy as np
+
+# def pitch_function(path):
+#     # Load file âm thanh và chuẩn hóa sample rate về 44100 Hz
+#     y, sr = librosa.load(path, sr=44100)
+#     frame_length = int(0.025 * sr)
+#     hop_length = int(0.010 * sr)
+#     # Trích xuất cao độ bằng phương pháp pyin với frame_length = 400 (25ms) và hop_length = 160 (10ms)
+#     f0, voiced_flag, voiced_probs = librosa.pyin(
+#         y,
+#         fmin=librosa.note_to_hz('E3'),  # Tần số thấp nhất (khoảng 165 Hz)
+#         fmax=librosa.note_to_hz('G5'),  # Tần số cao nhất (khoảng 784 Hz)
+#         frame_length = frame_length,  
+#         hop_length = hop_length  
+#     )
+
+#     # Lọc ra các giá trị f0 hợp lệ (voiced)
+#     f0 = f0[~np.isnan(f0)]
+
+#     if len(f0) > 0:
+#         return float(np.mean(f0))
+#     else:
+#         return 0.0  # Không tìm thấy pitch nào hợp lệ
+
 import numpy as np
+import scipy.io.wavfile as wav
+from scipy.signal import get_window
 
 def pitch_function(path):
-    # Load file âm thanh và chuẩn hóa sample rate về 44100 Hz
-    y, sr = librosa.load(path, sr=44100)
+    # Đọc file âm thanh và lấy sample rate
+    sr, signal = wav.read(path)
+
+    # Nếu là âm thanh stereo (2 kênh), chuyển thành mono bằng cách lấy trung bình 2 kênh
+    if signal.ndim > 1:
+        signal = signal.mean(axis=1)
+
+    # Chuẩn hóa tín hiệu về khoảng [-1, 1] nếu chưa phải dạng float32
+    if signal.dtype != np.float32:
+        signal = signal / np.max(np.abs(signal))
+
+    # Thiết lập tham số phân khung (25ms mỗi khung, bước nhảy 10ms)
     frame_length = int(0.025 * sr)
     hop_length = int(0.010 * sr)
-    # Trích xuất cao độ bằng phương pháp pyin với frame_length = 400 (25ms) và hop_length = 160 (10ms)
-    f0, voiced_flag, voiced_probs = librosa.pyin(
-        y,
-        fmin=librosa.note_to_hz('E3'),  # Tần số thấp nhất (khoảng 165 Hz)
-        fmax=librosa.note_to_hz('G5'),  # Tần số cao nhất (khoảng 784 Hz)
-        frame_length = frame_length,  
-        hop_length = hop_length  
-    )
+    window = get_window("hamming", frame_length)
 
-    # Lọc ra các giá trị f0 hợp lệ (voiced)
-    f0 = f0[~np.isnan(f0)]
+    # Chia tín hiệu thành nhiều khung
+    num_frames = 1 + (len(signal) - frame_length) // hop_length
+    pitches = []
 
-    if len(f0) > 0:
-        return float(np.mean(f0))
+    # Duyệt qua từng khung để tính pitch
+    for i in range(num_frames):
+        # Cắt khung và nhân với cửa sổ Hamming để giảm nhiễu biên
+        frame = signal[i * hop_length:i * hop_length + frame_length] * window
+
+        # Tính tự tương quan (autocorrelation) của khung
+        corr = np.correlate(frame, frame, mode='full')
+        corr = corr[len(corr) // 2:]  # chỉ giữ nửa phía sau (dương)
+
+        # Xác định khoảng lag hợp lệ tương ứng với dải tần (165Hz - 784Hz)
+        min_lag = int(sr / 784)   # Lag tương ứng với tần số cao nhất (G5)
+        max_lag = int(sr / 165)   # Lag tương ứng với tần số thấp nhất (E3)
+
+        # Tìm chỉ số có giá trị autocorr cao nhất trong vùng hợp lệ
+        peak_index = np.argmax(corr[min_lag:max_lag]) + min_lag
+        r = corr[peak_index]
+
+        # Nếu đỉnh có giá trị đủ lớn (ngưỡng đơn giản), tính pitch
+        if r > 0.1:  # Ngưỡng năng lượng để lọc nhiễu
+            pitch = sr / peak_index  # Công thức chuyển từ độ trễ sang tần số
+            pitches.append(pitch)
+
+    # Trả về giá trị pitch trung bình trên toàn bộ tín hiệu (nếu có)
+    if len(pitches) > 0:
+        return float(np.mean(pitches))
     else:
-        return 0.0  # Không tìm thấy pitch nào hợp lệ
+        return 0.0  # Không tìm được pitch hợp lệ

@@ -2,14 +2,13 @@ import pymysql
 import numpy as np
 import json
 import os
-from sklearn.preprocessing import MinMaxScaler
 
 from dac_trung.pitch import pitch_function
 from dac_trung.mfcc import mfcc_function
 from dac_trung.rmse import rmse_function
 from dac_trung.spectral import spectral_centroid_function
 from dac_trung.zcr import zcr_function
-from dac_trung.speech_rate import speach_rate_function
+from dac_trung.speech_rate import speech_rate_function
 
 def z_score(x,mean,std):
     return (x-mean)/std if std != 0 else 0.0
@@ -19,7 +18,7 @@ def extract_features(input_file):
         host='localhost',      # hoặc địa chỉ IP MySQL server
         user='root',
         password='123456789',
-        database='hcsdldpt',
+        database='hcsdldpt1',
         charset='utf8mb4'
     )
     cursor = conn.cursor()
@@ -28,7 +27,7 @@ def extract_features(input_file):
     # audio_dir = "D:/NAM4/KY2/HCSDLDPT/HCSDLDPT/src/dac_trung/Dataset/"
 
     # # Lấy tất cả đặc trưng từ CSDL
-    cursor.execute("SELECT file_name, mfcc, pitch, spectral_centroid, zcr, rmse, speech_rate FROM female_voices")
+    cursor.execute("SELECT file_name, mfcc, pitch, spectral_centroid, zcr, rmse, speech_rate FROM female_voice")
     db_features = []
     file_names = []
     for row in cursor.fetchall():
@@ -52,7 +51,7 @@ def extract_features(input_file):
     spectral_centroid = spectral_centroid_function(input_file)
     zcr = zcr_function(input_file)
     rmse = rmse_function(input_file)
-    speech_rate = speach_rate_function(input_file)
+    speech_rate = speech_rate_function(input_file)
 
     with open("norm_params.json","r") as f:
         norm_params = json.load(f)
