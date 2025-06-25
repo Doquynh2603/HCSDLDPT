@@ -46,7 +46,6 @@ def index():
             # Trích xuất đặc trưng từ file đầu vào
             try:
                 results = extract_features(filepath)
-                show_waveform(filepath, save_path="static/waveform.png")
                 # Xóa file tạm
                 os.remove(filepath)
 

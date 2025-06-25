@@ -1,22 +1,3 @@
-# import librosa
-# import numpy as np
-
-# def zcr_function(file_path):
-#     sr=44100
-#     frame_length=0.025
-#     hop_length=0.010
-#     #Đọc tín hiệu âm thanh với tần số lấy mẫu 44.1 kHz
-#     y, sr = librosa.load(file_path, sr=sr)
-    
-#     #Tính ZCR cho mỗi khung
-#     zcr = librosa.feature.zero_crossing_rate(y=y, frame_length=int(frame_length * sr), 
-#                                              hop_length=int(hop_length * sr))
-    
-#     #Tính trung bình ZCR trên tất cả các khung
-#     zcr_mean = np.mean(zcr)
-    
-#     return zcr_mean
-
 import numpy as np
 import scipy.io.wavfile as wav
 
@@ -25,8 +6,6 @@ def zcr_function(file_path):
     sr, signal = wav.read(file_path)
     if signal.ndim > 1:
         signal = signal.mean(axis=1)
-    # if sr != 44100:
-    #     raise ValueError(f"Expected sampling rate 44100 Hz, but got {sr}")
 
     # Bước 2: Cấu hình khung và bước nhảy
     frame_length = int(0.025 * sr)  # 25ms
